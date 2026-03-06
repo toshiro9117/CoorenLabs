@@ -14,7 +14,7 @@ import { Logger } from "./core/logger";
 import { mappingRoutes } from "./core/mappingRoutes";
 import { proxyRoutes } from "./core/proxyRoutes";
 import { animeRoutes } from "./providers/anime/route";
-import { mangaballRoutes } from "./providers/manga/mangaball/route";
+import { mangaRoutes } from "./providers/manga/route";
 
 validateConfig();
 
@@ -46,7 +46,7 @@ app
     };
   })
   .use(animeRoutes)
-  .use(mangaballRoutes) 
+  .use(mangaRoutes)
   .use(proxyRoutes)
   .use(mappingRoutes);
 
