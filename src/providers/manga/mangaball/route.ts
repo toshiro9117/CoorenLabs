@@ -20,7 +20,7 @@ function getBaseUrl(request: Request): string {
 
 // ─── Routes ────────────────────────────────────────────────────────────────
 
-export const mangaballRoutes = new Elysia({ prefix: "/manga/mangaball" })
+export const mangaballRoutes = new Elysia({ prefix: "/mangaball" })
   
   // ─── Root Endpoint ───────────────────────────────────────────────────────────
   .get("/", () => {
