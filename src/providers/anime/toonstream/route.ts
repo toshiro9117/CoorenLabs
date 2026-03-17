@@ -56,10 +56,12 @@ export const toonstreamRoutes = new Elysia({ prefix: "/toonstream" })
         prefix + "/movies/{page}",
         prefix + "/movie/info/{slug}",
         prefix + "/movie/sources/{url}",
+        prefix + "/embed/movie/{slug}",
         "----------------------",
         prefix + "/series/{page}",
         prefix + "/series/info/{slug}",
         prefix + "/episode/sources/{slug}",
+        prefix + "/embed/episode/{slug}",
         "----------------------",
         prefix + "/m3u8-proxy?url={url}&headers={encodedHeaders}",
         prefix + "/ts-segment?url={url}&headers={encodedHeaders}",
@@ -240,7 +242,11 @@ export const toonstreamRoutes = new Elysia({ prefix: "/toonstream" })
         msg: "No Data Scraped!",
       };
   })
+.get("/embed/movie/:slug", async ({ params }) => {
 
+return moviePlayer(params.slug)
+
+})
   .get("/series/:page?",
     async ({ params: { page } }) => {
       const then = performance.now();
@@ -332,7 +338,11 @@ export const toonstreamRoutes = new Elysia({ prefix: "/toonstream" })
         msg: "No Data Scraped!",
       };
   })
+.get("/embed/episode/:slug", async ({ params }) => {
 
+return episodePlayer(params.slug)
+
+})
 
   .get("/m3u8-proxy", async ({ request, query: { url, headers } }) => {
     let corsHeaders: Record<string, string> = {};
