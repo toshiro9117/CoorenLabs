@@ -111,6 +111,42 @@ bun run lint:fix
 
 ---
 
+## Deploying on Vercel
+
+This repository includes a Vercel function entry at `api/index.ts` and route rewrites in `vercel.json`.
+
+### Required Environment Variables
+
+Set these in Vercel Project Settings -> Environment Variables:
+
+```env
+SERVER_ORIGIN=https://your-deployment-url.vercel.app
+ENABLE_CACHE=false
+NODE_ENV=production
+```
+
+### Optional Cache Settings (Upstash)
+
+If you enable cache in Vercel, use Upstash settings:
+
+```env
+ENABLE_CACHE=true
+CACHE_PROVIDER=uptash
+UPSTASH_REDIS_REST_URL=...
+UPSTASH_REDIS_REST_TOKEN=...
+```
+
+Do not use `CACHE_PROVIDER=default` on Vercel unless the runtime is Bun and Redis is reachable from your deployment.
+
+### Post-Deploy Checks
+
+1. Open `/` and verify a JSON status response.
+2. Open `/docs` and verify OpenAPI loads.
+3. Test one provider route end-to-end.
+4. If you still see `FUNCTION_INVOCATION_FAILED`, inspect Vercel Runtime Logs for the first thrown error.
+
+---
+
 ## License
 
 This project is licensed under the [GPL-3.0 License](LICENSE).

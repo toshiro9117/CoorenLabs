@@ -11,7 +11,7 @@ const MAX_MP4_SIZE = 20 * 1024 * 1024 * 1024; // 20 GB
 
 const PLAYLIST_REGEX = /\.m3u|playlist|\.txt/i
 
-if (!SERVER_ORIGIN) throw new Error("set SERVER_ORIGIN at .env!");
+if (!SERVER_ORIGIN) Logger.warn("SERVER_ORIGIN is not set. Proxy rewrite URLs may be invalid.");
 
 export const proxyRoutes = new Elysia({ prefix: "/proxy" })
 
