@@ -15,6 +15,7 @@ import {
   ScrapeSeries,
   ScrapeSeriesInfo,
 } from "./scrapers/series";
+import { env } from "../../../core/runtime";
 
 const HOME_CACHE_TTL = 43_200; // 12hr
 const SEARCH_CACHE_TTL = 43_200; // 12hr
@@ -26,14 +27,14 @@ const SERIES_PAGE_CACHE_TTL = 3600 * 24 * 30; // 30 days
 const MOVIE_INFO_CACHE_TTL = 3600 * 24 * 14; // 14 days
 const SERIES_INFO_CACHE_TTL = 3600 * 24 * 3; // 3 days
 
-export const SERVER_ORIGIN = Bun.env.SERVER_ORIGIN || "";
-export const PROXIFY = Boolean(Bun.env.PROXIFY) || false;
+export const SERVER_ORIGIN = env.SERVER_ORIGIN || "";
+export const PROXIFY = Boolean(env.PROXIFY) || false;
 
-if (!SERVER_ORIGIN) throw new Error("set SERVER_ORIGIN at .env!");
+if (!SERVER_ORIGIN) Logger.warn("SERVER_ORIGIN is not set. Proxy endpoints may not work correctly.");
 
 Logger.info("auto source proxy is ", PROXIFY);
 
-const envOrigins = Bun.env.ALLOWED_ORIGINS;
+const envOrigins = env.ALLOWED_ORIGINS;
 
 const ALLOWED_ORIGINS: string[] | "*" = envOrigins
   ? envOrigins.split(",").map((o: string) => o.trim().replace(/\/$/, ""))

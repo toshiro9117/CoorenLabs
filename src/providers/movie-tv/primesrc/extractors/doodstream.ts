@@ -1,5 +1,6 @@
 import { fetcher } from "../../../../core/lib/fetcher";
 import { Logger } from "../../../../core/logger";
+import { bunWrite } from "../../../../core/runtime";
 import { ServerSource } from "../types";
 
 
@@ -53,7 +54,7 @@ export const extractDoodstream = async (url: string) => {
             return;
         }
 
-        Bun.write(`./logs/${Date.now()}`, text1);
+        await bunWrite(`./logs/${Date.now()}`, text1);
         Logger.info(status1);
 
         const md5passRegex = /\/pass_md5\/[^'"]*/;

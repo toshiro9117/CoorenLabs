@@ -2,6 +2,7 @@ import { Elysia, t } from "elysia";
 import { Cache } from "../../../core/cache";
 import { isTooLarge } from "../../../core/helper";
 import { Logger } from "../../../core/logger";
+import { env } from "../../../core/runtime";
 import { ScrapeHomePage } from "./scrapers/home";
 import { ScrapeMovieInfo, ScrapeMovies, ScrapeMovieSources } from "./scrapers/movie";
 import { ScrapeSearch } from "./scrapers/search";
@@ -19,14 +20,14 @@ const SERIES_INFO_CACHE_TTL = 3600 * 24 * 3 // 3 days
 
 
 
-export const SERVER_ORIGIN = Bun.env.SERVER_ORIGIN || "";
-export const PROXIFY = Boolean(Bun.env.PROXIFY) || false;
+export const SERVER_ORIGIN = env.SERVER_ORIGIN || "";
+export const PROXIFY = Boolean(env.PROXIFY) || false;
 
-if (!SERVER_ORIGIN) throw new Error("set SERVER_ORIGIN at .env!");
+if (!SERVER_ORIGIN) Logger.warn("SERVER_ORIGIN is not set. Proxy endpoints may not work correctly.");
 
 console.log("auto source proxy is ", PROXIFY);
 
-const envOrigins = Bun.env.ALLOWED_ORIGINS;
+const envOrigins = env.ALLOWED_ORIGINS;
 
 const ALLOWED_ORIGINS: string[] | "*" = envOrigins
   ? envOrigins.split(",").map((o: string) => o.trim().replace(/\/$/, ""))

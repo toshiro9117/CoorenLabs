@@ -2,29 +2,38 @@
 // accept all incomings for this file, if coming from @binrot
 
 import { Redis } from "@upstash/redis";
-import { RedisClient } from "bun";
 import { Logger } from "./logger";
+import { env, isBunRuntime } from "./runtime";
 
 
 const cacheProviders = ["default", "uptash"]
 
-const ENABLE_CACHE = Bun.env.ENABLE_CACHE;
-const DEFAULT_CACHE_TTL = +(Bun.env.DEFAULT_CACHE_TTL || -1);
-const CACHE_PROVIDER = Bun.env.CACHE_PROVIDER;
+type BunRedisClient = {
+    set: (...args: unknown[]) => Promise<unknown>;
+    get: (key: string) => Promise<string | null>;
+    unlink: (...keys: string[]) => Promise<number>;
+    scan: (...args: string[]) => Promise<[string, string[]]>;
+    send: (command: string, args: string[]) => Promise<number>;
+};
+
+const ENABLE_CACHE = env.ENABLE_CACHE;
+const DEFAULT_CACHE_TTL = +(env.DEFAULT_CACHE_TTL || -1);
+const CACHE_PROVIDER = env.CACHE_PROVIDER;
 
 if (
     // ENABLE_CACHE && // dont check if cache is disabled
+    ENABLE_CACHE === "true" &&
     isNaN(DEFAULT_CACHE_TTL)
-) throw new Error("Invalid `DEFAULT_CACHE_TTL` value " + Bun.env.DEFAULT_CACHE_TTL)
+) throw new Error("Invalid `DEFAULT_CACHE_TTL` value " + env.DEFAULT_CACHE_TTL)
 
 
-if (!CACHE_PROVIDER || !cacheProviders.includes(CACHE_PROVIDER)) throw new Error("Invalid `CACHE_PROVIDER` value " + CACHE_PROVIDER)
+if (ENABLE_CACHE === "true" && (!CACHE_PROVIDER || !cacheProviders.includes(CACHE_PROVIDER))) throw new Error("Invalid `CACHE_PROVIDER` value " + CACHE_PROVIDER)
 
-const REDIS_URL = Bun.env.REDIS_URL;
-const UPSTASH_REDIS_REST_URL = Bun.env.UPSTASH_REDIS_REST_URL;
-const UPSTASH_REDIS_REST_TOKEN = Bun.env.UPSTASH_REDIS_REST_TOKEN;
+const REDIS_URL = env.REDIS_URL;
+const UPSTASH_REDIS_REST_URL = env.UPSTASH_REDIS_REST_URL;
+const UPSTASH_REDIS_REST_TOKEN = env.UPSTASH_REDIS_REST_TOKEN;
 
-let redis: Redis | RedisClient | undefined;
+let redis: Redis | BunRedisClient | undefined;
 
 // cache disabled
 if (ENABLE_CACHE !== "true") {
@@ -34,8 +43,12 @@ if (ENABLE_CACHE !== "true") {
 // default
 else if (CACHE_PROVIDER == "default") {
     if (!REDIS_URL) throw new Error("`REDIS_URL` is required to use redis cache!");
+    if (!isBunRuntime) throw new Error("`CACHE_PROVIDER=default` requires Bun runtime. Use `CACHE_PROVIDER=uptash` on Node/Vercel.");
 
-    redis = new RedisClient(REDIS_URL, { autoReconnect: true, connectionTimeout: 10_000, maxRetries: 3 })
+    const BunRedisClient = (globalThis as { Bun?: { RedisClient?: new (url: string, options: Record<string, unknown>) => BunRedisClient } }).Bun?.RedisClient;
+    if (!BunRedisClient) throw new Error("Bun RedisClient is unavailable in current runtime.");
+
+    redis = new BunRedisClient(REDIS_URL, { autoReconnect: true, connectionTimeout: 10_000, maxRetries: 3 })
     Logger.info("[Cache]  Redis (default) successfully initailized, now serving with cache!");
 }
 
@@ -72,7 +85,7 @@ export class Cache {
             } else {
                 // store for TTL seconds
                 if (CACHE_PROVIDER === "default") {
-                    await (redis as RedisClient).set(key, value, "EX", TTL);
+                    await (redis as BunRedisClient).set(key, value, "EX", TTL);
                 } else {
                     await redis.set(key, value, { ex: TTL });
                 }
@@ -143,7 +156,7 @@ export class Cache {
                 let keys: string[];
 
                 if (CACHE_PROVIDER === "default") {
-                    [nextCursor, keys] = await (redis as RedisClient).scan(cursor, "MATCH", `${prefix}*`);
+                    [nextCursor, keys] = await (redis as BunRedisClient).scan(cursor, "MATCH", `${prefix}*`);
                 } else {
                     [nextCursor, keys] = await (redis as Redis).scan(cursor, { match: `${prefix}*` });
                 }
@@ -174,8 +187,8 @@ export class Cache {
             let count = 0;
 
             if (CACHE_PROVIDER === "default") {
-                count = await (redis as RedisClient).send("DBSIZE", []);
-                await (redis as RedisClient).send("FLUSHDB", []);
+                count = await (redis as BunRedisClient).send("DBSIZE", []);
+                await (redis as BunRedisClient).send("FLUSHDB", []);
             } else {
                 count = await (redis as Redis).dbsize();
                 await (redis as Redis).flushdb();

@@ -1,16 +1,32 @@
-import { RedisClient } from "bun";
+import { env, isBunRuntime } from "../../../../core/runtime";
 
-const redisUrl = Bun.env.REDIS_URL || undefined;
-const cacheEnabled = process.env.ENABLE_CACHE && process.env.ENABLE_CACHE == "true"
+type BunRedisClient = {
+    get: (key: string) => Promise<string | null>;
+    set: (...args: unknown[]) => Promise<unknown>;
+    keys: (pattern: string) => Promise<string[]>;
+    del: (...keys: string[]) => Promise<number>;
+};
 
-let redis: RedisClient | null = null;
+const redisUrl = env.REDIS_URL || undefined;
+const cacheEnabled = env.ENABLE_CACHE && env.ENABLE_CACHE == "true"
+
+let redis: BunRedisClient | null = null;
 
 if (!cacheEnabled) {
     console.log("[Cache] Caching is disabled! serving without cache.");
 } else {
     console.log("[Cache] Caching is enabled! serving with cache.");
 
-    redis = new RedisClient(redisUrl, {
+    if (!isBunRuntime) {
+        throw new Error("Toonstream cache requires Bun runtime when ENABLE_CACHE=true.");
+    }
+
+    const BunRedisClient = (globalThis as { Bun?: { RedisClient?: new (url?: string, options?: Record<string, unknown>) => BunRedisClient } }).Bun?.RedisClient;
+    if (!BunRedisClient) {
+        throw new Error("Bun RedisClient is unavailable in current runtime.");
+    }
+
+    redis = new BunRedisClient(redisUrl, {
         maxRetries: 3
     });
 }

@@ -77,8 +77,12 @@ app
   .use(proxyRoutes)
   .use(mappingRoutes)
 
-app.listen(PORT);
+if (process.env.VERCEL !== "1") {
+  app.listen(PORT);
 
-Logger.info(
-  `Started at ${app.server?.protocol}://${app.server?.hostname}:${PORT}`,
-);
+  Logger.info(
+    `Started at ${app.server?.protocol}://${app.server?.hostname}:${PORT}`,
+  );
+}
+
+export default app;
